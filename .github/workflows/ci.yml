@@ -130,7 +130,7 @@ jobs:
       - name: "[Init] Add current version of WordpressIntegrationCms"
         working-directory: ${{ env.magento-directory }}
         run: |
-          composer require --dev "mooore/magento2-module-wordpress-integration-cms:${GITHUB_BASE_REF:-${GITHUB_REF##*/}}-dev" --ignore-platform-reqs
+          composer require --dev "mooore/magento2-module-wordpress-integration-cms:dev-${GITHUB_BASE_REF:-${GITHUB_REF##*/}}" --ignore-platform-reqs
           cp -r $GITHUB_WORKSPACE/* vendor/mooore/magento2-module-wordpress-integration-cms
 
       - name: "[Init] Fix Magento directory permissions"
