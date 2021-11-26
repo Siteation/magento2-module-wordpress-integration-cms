@@ -54,7 +54,7 @@ jobs:
           PHP_VERSION: ${{ matrix.php-versions }}
         run: |
           sudo apt install -y "php${PHP_VERSION}-fpm"
-          sudo cp "/usr/sbin/php-fpm${PHP_VERSION} /usr/bin/php-fpm"
+          sudo cp "/usr/sbin/php-fpm${PHP_VERSION}" "/usr/bin/php-fpm"
           sudo systemctl start "php${PHP_VERSION}-fpm"
           sudo systemctl status "php${PHP_VERSION}-fpm"
 
