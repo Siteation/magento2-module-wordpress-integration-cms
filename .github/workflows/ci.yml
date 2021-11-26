@@ -58,3 +58,92 @@ jobs:
           sudo systemctl start "php${PHP_VERSION}-fpm"
           sudo systemctl status "php${PHP_VERSION}-fpm"
 
+      - name: "[Init] Setup Apache with PHP-FPM"
+        env:
+          MAGENTO_ROOT: ${{ env.magento-directory }}
+          PHP_VERSION: ${{ matrix.php-versions }}
+        run: |
+          sudo apt -qq update
+          sudo apt -qq install apache2
+          sudo a2enmod rewrite actions alias proxy proxy_fcgi
+          sudo usermode -a -G www-data $USER
+          sudo cp -r .github/res/apache/apache.conf /etc/apache2/sites-available/000-default.conf
+          sudo mkdir -p $MAGENTO_ROOT
+          sudo chown -R $USER:www-data $MAGENTO_ROOT
+          sudo sed -e "s?%MAGENTO_ROOT%?$(readlink -f ${MAGENTO_ROOT})?g" --in-place /etc/apache2/sites-available/000-default.conf
+          sudo sed -e "s?%PHP_VERSION%?${PHP_VERSION}?g" --in-place /etc/apache2/sites-available/000-default.conf
+          sudo apachectl configtest
+          sudo systemctl restart apache2
+          sudo systemctl status apache2
+
+      - name: "[Init] Determine composer cache directory"
+        id: composer-cache-directory
+        run: "echo \"::set-output name=directory::$(composer config cache-dir)\""
+
+      - name: "[Init] Cache Composer cache"
+        id: composer-cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.composer-cache-directory.outputs.directory }}
+          key: composer-${{ matrix.php-versions }}-${{ matrix.magento-versions }}
+          restore-keys: |
+            composer-${{ matrix.php-versions }}-${{ matrix.magento-versions }}
+            composer-${{ matrix.php-versions }}-
+            composer-
+
+      - name: "[Init] Cache Magento install"
+        id: magento-cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.magento-directory }}
+          key: magento-${{ matrix.php-versions }}-${{ matrix.magento-versions }}
+          restore-keys: |
+            magento-${{ matrix.php-versions }}-${{ matrix.magento-versions }}
+
+      - name: "[Init] Prepare credentials"
+        run: composer config -g http-basic.repo.magento.com "${COMPOSER_MAGENTO_USERNAME}" "${COMPOSER_MAGENTO_PASSWORD}"
+
+      - name: "[Init] Prepare Magento install if needed"
+        if: steps.magento-cache.outputs.cache-hit == 'true'
+        working-directory: ${{ env.magento-directory }}
+        run: |
+          rm -f app/etc/env.php app/etc/config.php
+          composer config discard-changes true
+          composer remove mooore/magento2-module-wordpress-integration-cms --no-update --no-interaction
+          composer update --no-interaction --ignore-platform-reqs
+          composer config discard-changes false
+
+      - name: "[Init] Install proper version of Magento through Composer"
+        if: steps.magento-cache.outputs.cache-hit != 'true'
+        env:
+          MAGENTO_VERSION: ${{ matrix.magento-versions }}
+          STABILITY: "--stability=stable"
+          MAGENTO_ROOT: ${{ env.magento-directory }}
+        run: |
+          sudo rm -rf $MAGENTO_ROOT
+          sudo mkdir -p $MAGENTO_ROOT
+          sudo chown -R $USER:www-data $MAGENTO_ROOT
+          composer create-project --repository-url=https://repo.magento.com magento/project-community-edition:$MAGENTO_VERSION $STABILITY $MAGENTO_ROOT --quiet
+
+      - name: "[Init] Add current version of WordpressIntegrationCms"
+        working-directory: ${{ env.magento-directory }}
+        run: |
+          composer require --dev "mooore/magento2-module-wordpress-integration-cms:${GITHUB_BASE_REF:-${GITHUB_REF##*/}}-dev" --ignore-platform-reqs
+          cp -r $GITHUB_WORKSPACE/* vendor/mooore/magento2-module-wordpress-integration-cms
+
+      - name: "[Init] Fix Magento directory permissions"
+        env:
+          MAGENTO_ROOT: ${{ env.magento-directory }}
+        working-directory: ${{ env.magento-discovery }}
+        run: |
+          sudo find . -type f -exec chmod 644 {} \;
+          sudo find . -type d -exec chmod 755 {} \;
+          sudo find var pub/static app/etc generated -type f -exec chmod g+w {} \;
+          sudo find var pub/static app/etc generated -type d -exec chmod g+ws {} \;
+          sudo chown -R $USER:www-data
+          sudo chmod u+x bin/magento
+
+      - name: "[Init] Install Magento"
+        working-directory: ${{ env.magento-directory }}
+        run: php bin/magento setup:install --db-host="0.0.0.0" --db-password="magento2" --admin-user="admin" --admin-password="smile1234" --admin-email="admin@example.com" --admin-firstname="Admin" --admin-lastname="Smile" --db-name="magento2" --elasticsearch-host="localhost" --elasticsearch-port="9200" -q
+
