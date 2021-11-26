@@ -136,7 +136,7 @@ jobs:
       - name: "[Init] Fix Magento directory permissions"
         env:
           MAGENTO_ROOT: ${{ env.magento-directory }}
-        working-directory: ${{ env.magento-discovery }}
+        working-directory: ${{ env.magento-directory }}
         run: |
           sudo find . -type f -exec chmod 644 {} \;
           sudo find . -type d -exec chmod 755 {} \;
