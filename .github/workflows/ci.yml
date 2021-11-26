@@ -67,7 +67,9 @@ jobs:
           sudo apt -qq install apache2
           sudo a2enmod rewrite actions alias proxy proxy_fcgi
           sudo usermod -a -G www-data $USER
-          sudo cp -r .github/res/apache/apache.conf /etc/apache2/sites-available/000-default.conf
+          ls -la
+          find .github
+          sudo cp .github/res/apache/apache.conf /etc/apache2/sites-available/000-default.conf
           sudo mkdir -p $MAGENTO_ROOT
           sudo chown -R $USER:www-data $MAGENTO_ROOT
           sudo sed -e "s?%MAGENTO_ROOT%?$(readlink -f ${MAGENTO_ROOT})?g" --in-place /etc/apache2/sites-available/000-default.conf
