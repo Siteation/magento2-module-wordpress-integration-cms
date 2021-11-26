@@ -142,7 +142,7 @@ jobs:
           sudo find . -type d -exec chmod 755 {} \;
           sudo find var pub/static app/etc generated -type f -exec chmod g+w {} \;
           sudo find var pub/static app/etc generated -type d -exec chmod g+ws {} \;
-          sudo chown -R $USER:www-data
+          sudo chown -R $USER:www-data .
           sudo chmod u+x bin/magento
 
       - name: "[Init] Install Magento"
