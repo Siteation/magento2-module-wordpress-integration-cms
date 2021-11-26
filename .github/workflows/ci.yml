@@ -147,5 +147,5 @@ jobs:
 
       - name: "[Init] Install Magento"
         working-directory: ${{ env.magento-directory }}
-        run: php bin/magento setup:install --db-host="0.0.0.0" --db-password="magento2" --admin-user="admin" --admin-password="smile1234" --admin-email="admin@example.com" --admin-firstname="Admin" --admin-lastname="Smile" --db-name="magento2" --elasticsearch-host="localhost" --elasticsearch-port="9200" -q
+        run: php bin/magento setup:install --db-host="0.0.0.0" --db-password="magento" --admin-user="admin" --admin-password="Test1234!" --admin-email="admin@example.com" --admin-firstname="Mooore" --admin-lastname="Digital" --db-name="magento" --elasticsearch-host="localhost" --elasticsearch-port="9200" -q
 
